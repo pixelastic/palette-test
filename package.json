@@ -3,7 +3,17 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "license": "MIT",
   "main": "index.js",
-  "packageManager": "yarn@4.5.3"
+  "packageManager": "yarn@4.5.3",
+  "dependencies": {
+    "colorthief": "2.6.0",
+    "lodash": "4.17.21",
+    "node-vibrant": "3.2.1-alpha.1",
+    "splashy": "5.1.46",
+    "tinycolor2": "1.6.0"
+  }
 }
