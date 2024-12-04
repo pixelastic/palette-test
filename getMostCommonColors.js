@@ -4,7 +4,7 @@ import quantize from '@lokesh.dhakar/quantize';
 import tinycolor from 'tinycolor2';
 
 /**
- * Fetches an image from a URL and extract the most common colors
+ * Extract the most common colors from an image buffer
  * @param {string} buffer The buffer of the image to analyze
  * @returns {Promise<string[]>} Array of hex color codes extracted from the image
  */
