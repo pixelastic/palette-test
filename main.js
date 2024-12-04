@@ -1,12 +1,13 @@
 import Vibrant from 'node-vibrant';
-import splashy from 'splashy';
 import colorthief from 'colorthief';
-import _ from 'lodash';
-import tinycolor from 'tinycolor2';
 import path from 'node:path';
+import splashy from 'splashy';
+import tinycolor from 'tinycolor2';
 import { promises as fs } from 'node:fs';
+import { absolute, read, write, gitRoot } from 'firost'
+import { _, pMap } from 'golgoth';
 
-const testImagePath = path.resolve('./image-01.jpg');
+const testImages = ['image-1.jpg', 'image-2.jpg', 'image-3.png', 'image-4.png']
 
 function getPaletteLink(palette) {
   return `https://coolors.co/${palette.join('-')}`;
@@ -33,24 +34,52 @@ async function getPaletteWithSplashy(filepath) {
   }).value();
 }
 
-async function getPaletteWithColorThief(filepath) {
-  const colorThiefPalette = await colorthief.getPalette(filepath);
-  return _.chain(colorThiefPalette).map((value) => {
+async function getPaletteWithColorthief(filepath) {
+  const buffer = await fs.readFile(filepath)
+  const colorthiefPalette = await colorthief.getPalette(buffer);
+  return _.chain(colorthiefPalette).map((value) => {
     const [r,g,b] = value;
     return tinycolor({ r, g, b}).toHex();
   }).value();
 }
 
 (async () => {
-  const nodeVibrantPalette = await getPaletteWithNodeVibrant(testImagePath);
-  const splashyPalette = await getPaletteWithSplashy(testImagePath);
-  const colorThiefPalette = await getPaletteWithColorThief(testImagePath);
 
-  console.info(`
-  [node-vibrant]: ${getPaletteLink(nodeVibrantPalette)}
-  [splashy]: ${getPaletteLink(splashyPalette)}
-  [colorthief]: ${getPaletteLink(colorThiefPalette)}
-  `);
+  const output = [];
+
+  await pMap(testImages, async (imagePath, index) => {
+    const filepath = path.resolve(gitRoot(), imagePath);
+    const basename = path.basename(filepath);
+    const displayIndex = index+1;
+
+    const nodeVibrantPalette = await getPaletteWithNodeVibrant(filepath);
+    const nodeVibrantLink = await getPaletteLink(nodeVibrantPalette);
+    const splashyPalette = await getPaletteWithSplashy(filepath);
+    const splashyLink = await getPaletteLink(splashyPalette);
+    const colorthiefPalette = await getPaletteWithColorthief(filepath);
+    const colorthiefLink = await getPaletteLink(colorthiefPalette);
+
+    output.push(`## Test ${displayIndex}`)
+    output.push(`### Original image`);
+    output.push(`![original image](./${basename})`);
+    output.push('### Palette by `node-vibrant`');
+    output.push(`[![node-vibrant](./output/node-vibrant-${displayIndex}.png)](${nodeVibrantLink})`);
+    output.push('### Palette by `splashy`');
+    output.push(`[![splashy](./output/splashy-${displayIndex}.png)](${splashyLink})`);
+    output.push('### Palette by `colorthief`');
+    output.push(`[![colorthief](./output/colorthief-${displayIndex}.png)](${colorthiefLink})`);
+  }, { concurrency: 1 });
+
+  const readmePath = absolute(gitRoot(), 'README.md');
+  const readmeContent = `
+# palette-test
+
+This is a comparison of various palette-extracting libraries, on the same image.
+
+${output.join('\n\n')}
+`
+  await write(readmeContent, readmePath);
+
 })();
 
 
